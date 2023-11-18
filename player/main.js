@@ -1,3 +1,6 @@
+const scx = window.innerWidth / 2
+const scy = window.innerHeight / 2
+
 class playerSpeed {
     // Credit:
     // https://github.com/Rekkonnect/GDAPI/blob/master/GDAPI/GDAPI/Information/GeometryDash/Speeds.cs
@@ -27,12 +30,21 @@ class playerSpeed {
     }
 }
 
+let blockdata = {
+    blocks: [
+        {id: 1, x:15, y:1}, // block
+        {id: 1, x:16, y:1},
+        {id: 2, x:30, y:2, pressed: false} // orb
+    ],
+}
+
 const Player = {
     x: 0,
     y: 0,
+    vx: 0,
     vy: 0,
     icon: null,
-    speed: "normal"
+    speed: "slow"
 }
 
 let zoom = 1
@@ -51,22 +63,30 @@ function delta() {
 }
 
 let offset = {
-    x: window.innerWidth/4,
-    y: window.innerHeight-window.innerHeight/3
+    x: scx/1.5,
+    y: scy*2.5
+}
+let cameraOffset = {
+    x: 5,
+    y: 0
 }
 
 
 let rotate = 0
 let isOnFloor = false
-let jumping = false
-let gravity = 2.5
+let jumping = true
+let gravity = 3.5
+let maxFall = 2
+let isOnBlock = false
+
+let orbpress = false
 
 $(document).mousedown(()=>{
     jumping = true
-})
-$(document).mouseup(()=>{
+}).mouseup(()=>{
     jumping = false
 })
+
 
 let floorHeightA = 0;
 
@@ -76,46 +96,89 @@ const keys = new keyHandler;
 
 const perframe = new perFrame(()=>{
     audioSource.play()
-    Player.x =+ audioSource.currentTime * new playerSpeed().getSpeed("normal")
 
-    if((jumping || keys.pressed("Space") || keys.pressed("KeyW") || keys.pressed("ArrowUp")) && isOnFloor){
-        Player.vy -= 30
+    Player.vx = new playerSpeed().getSpeed(Player.speed) / 10
+
+    if((jumping || keys.pressed("Space") || keys.pressed("KeyW") || keys.pressed("ArrowUp")) && isOnFloor ){
+        Player.vy -= 40
         isOnFloor = false
     }
 
-    if(Player.y+Player.vy>floorHeightA){
+    
+
+    offset.x -= new playerSpeed().getSpeed(Player.speed) / 10 
+
+    if(Player.y+Player.vy/2>floorHeightA){
         isOnFloor = true
     }
 
     if(isOnFloor){
         Player.vy=0;
-        console.log(rotate)
         if (rotate%25>25/2) {
-            rotate-=.5
-        } if(rotate%25<25/2) {
-            rotate+=.5
+            rotate-=1
+        }
+        if(rotate%25<25/2) {
+            rotate+=1
         }
     } else {
-        Player.vy+=gravity
-
-        rotate+=1*(Math.abs(gravity)/gravity)
+        Player.vy+=gravity;
+        rotate+=1*(Math.abs(gravity)/gravity);
     }
-
-    Player.y += Player.vy
-
-
-    ctx.clearRect(0,0,window.innerWidth,window.innerHeight)
     
+    Player.y += Player.vy;
+    Player.x += Player.vx;
+
+    Player.y = Player.y > maxFall ? maxFall : Player.y
+
+    ctx.clearRect(0,0,window.innerWidth,window.innerHeight);
+
     ctx.save();
-    ctx.translate(offset.x-50*zoom/2-zoom/2, offset.y-50*zoom/2-zoom/2)
-    ctx.beginPath();
-    ctx.rotate(rotate*Math.PI/25)
-    ctx.lineWidth = 3
-    ctx.rect(-50*zoom/2,-50*zoom/2, 50*zoom, 50*zoom);
-    ctx.fillStyle = 'red'
-    ctx.fill()
-    ctx.rect(-25*zoom/2,-25*zoom/2, 25*zoom, 25*zoom);
-    ctx.stroke();
+    ctx.scale(.5, .5)
+    ctx.translate(offset.x+Player.x + cameraOffset.x*100, offset.y+Player.y + cameraOffset.y*100)
+    ctx.rotate(rotate * Math.PI /25)
+    ctx.fillRect(-50, -50, 100, 100);
     ctx.restore();
-    ctx.fillRect(0, offset.y-Player.y, window.innerWidth, 10)
+    blockdata.blocks.forEach(block => {
+        switch(block.id){
+            case 1:
+                ctx.save()
+                ctx.beginPath()
+                ctx.scale(.5, .5)
+                ctx.translate(offset.x+block.x*100 + cameraOffset.x*100, offset.y-block.y*100 + cameraOffset.y*100)
+                ctx.rect(-50, -50, 100, 100)
+                ctx.stroke()
+                ctx.restore()
+                
+                if (block.x -1 < Player.x / 100 && block.x +1 > Player.x / 100 &&
+                    block.y < Player.y / -100 && block.y +1 > Player.y / -100) {
+                    isOnFloor=true
+                    Player.vy = 0
+                    Player.y-=2;
+                }
+                if(block.x -1 > Player.x / 100 && block.x +1 < Player.x / 100){
+                    isOnFloor = false
+                }
+                return;
+            case 2:
+                ctx.save()
+                ctx.beginPath();
+                ctx.scale(.5, .5);
+                ctx.translate(offset.x+block.x*100 + cameraOffset.x*100, offset.y-block.y*100 + cameraOffset.y*100)
+                ctx.arc(0, 0, 25, 0, 360*Math.PI / 180);
+                ctx.stroke();
+                ctx.fill()
+                ctx.restore();
+                if (block.x -1 < Player.x / 100 && block.x +1 > Player.x / 100 &&
+                block.y < Player.y / -100 && block.y +1 > Player.y / -100){
+                    if(jumping){
+                        block.pressed = true
+                        Player.vy = - 40
+                    }
+                }
+
+            default:
+                return 0;
+
+        }
+    });
 });
