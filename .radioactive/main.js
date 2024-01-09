@@ -7,3 +7,9 @@ canvas.height = window.innerHeight;
 const audioSource = new Audio();
 audioSource.src = "/music/mainLevels/696528.mp3";
 offset = 0;
+
+let blockdata = {
+    blocks: [
+        {id: 1, x: 3, y: 0}
+    ],
+}

@@ -29,27 +29,9 @@ class playerSpeed {
         throw("Invalid speed, bad call.");
     }
 }
-
 const clamp = (v, n, m) => {return v > m ? m : (v < n ? n : v)}
-let blockdata = {
-    blocks: [
-    ],
-}
-{
-    for (let i = -5; i < 6; i++) {
-        blockdata.blocks.push({x: i, y:0, id:1})
-        blockdata.blocks.push({x: i, y:-10, id:1})
-        blockdata.blocks.push({x: -5, y:i-5, id:1})
-    }
-    for(let i=0; i<3; i++){
-        blockdata.blocks.push({id: 1, x: -1+i, y: -6})
-        blockdata.blocks.push({id: 1, x: -1+i, y: -5})
-        blockdata.blocks.push({id: 1, x: -1+i, y: -4})
-    
-        blockdata.blocks.push({id: 1, x: 5, y: -3+i})
-        blockdata.blocks.push({id: 1, x: 5, y: -9+i})
-    }
-}
+
+
 
 const Player = {
     x: 0,
@@ -60,29 +42,12 @@ const Player = {
     speed: "slow"
 }
 
-let zoom = 1
-
 class perFrame {
     constructor(callback){
         return setInterval(callback, 1000/60)
     }
 }
 
-let deltaDate = new Date;
-function delta() {
-    let frameTime = new Date - deltaDate;
-    deltaDate = new Date;
-    return frameTime / 1000;
-}
-
-let offset = {
-    x: scx*1,
-    y: scy*1
-}
-let cameraOffset = {
-    x: 0,
-    y: 0
-}
 
 
 let rotate = 0
@@ -101,10 +66,19 @@ $(document).mousedown(()=>{
 
 const ps = new playerSpeed;
 
+const world = {
+    colliding: (object) => {
+        if(object.x, object.y, object.width, object.height){
+            
+        if(object.x<Player.x)
+            console.log("collding")
+        }
+    }
+}
+
 const currentAudio = audioSource;
 
 const keys = new keyHandler;
-Player.y = 5*-100
 
 function controls(){
     let deltat = delta();
@@ -124,34 +98,52 @@ function controls(){
     }
     //
     
-    if(keys.pressed("KeyW")){
-        Player.vy -= new playerSpeed().getSpeed(Player.speed) / 100 * deltat * maxSpeed
+    if((keys.pressed("KeyW") || keys.pressed("Space")) && isOnFloor){
+        jumping = true
+    } else {
+        jumping = false
     }
-    if(keys.pressed("KeyS")){
-        Player.vy += new playerSpeed().getSpeed(Player.speed) / 100 * deltat * maxSpeed
-    }
-    
-    if(keys.pressed("KeyW") && keys.pressed("KeyS")){
-        Player.vy /= 1.5
-    }
-    if(!keys.pressed("KeyW") && !keys.pressed("KeyS")){
-        Player.vy /= 1.5
-    }
+
+
+
     requestAnimationFrame(controls)
 }
-
 controls()
+
+function devPanel(params) {
+    
+}
+
+const colliding = (block1, block2) => {
+    if(
+        block1.x < block2.x + block2.w &&
+        block1.x + block1.w > block2.x
+        ){
+
+    }
+}
+
 const perframe = new perFrame(()=>{
     //audioSource.play()
-
-
-    
+    Player.vy += gravity
 
     let playerXY = [Player.x / 100, Player.y / 100]
 
-    cameraOffset.x = playerXY[0];
-    cameraOffset.y = playerXY[1]*-1;
 
+    blockdata.blocks.forEach(block => {
+        switch(block.id){
+            case 1:
+                if(colliding(block, Player)){
+                    console.log("hello")
+                }
+                
+                return;
+            case 2:
+            default:
+                return 0;
+
+        }
+    });
 
     Player.y += Player.vy;
     Player.x += Player.vx;
@@ -180,21 +172,6 @@ const perframe = new perFrame(()=>{
                 ctx.translate(offset.x+block.x*100 + cameraOffset.x*100, offset.y+block.y*100 + cameraOffset.y*100)
                 ctx.fillRect(-50, -50, 101, 101)
                 ctx.restore()
-                if(playerXY[0] >= block.x-1 && playerXY[0] <= block.x+1
-                    && playerXY[1] >= block.y-1 && playerXY[1] <= block.y + 1){
-                        let distancex = (playerXY[0] - block.x) * -1
-                        let distancey = (playerXY[1] - block.y) * -1
-                        
-                        Player.vx = distancex * -2
-                        Player.vy = distancey * -2
-                        Player.x -= distancex * 3;
-                        Player.y -= distancey * 3;
-
-                }
-                
-                
-
-
                 
                 return;
             case 2:
