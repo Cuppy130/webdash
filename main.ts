@@ -94,9 +94,9 @@ class Player {
     }
 }
 
-const player = new Player(-2, -2.5);
+const player = new Player(-1, 0);
 const objects = [
-    new obj(0, 0, 20, 1),
+    new obj(-100, 0, 9999, 20), //ground
 ]
 
 function loop() {
